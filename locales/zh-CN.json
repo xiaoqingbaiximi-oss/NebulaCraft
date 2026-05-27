@@ -1,0 +1,32 @@
+{
+  "app.name": "NebulaCraft",
+  "app.version": "v7.0",
+  "app.tagline": "本地全能AI工作站",
+
+  "search.placeholder": "输入你想做的事... 例如：BMI 70 170、生成密码、JSON格式化",
+
+  "tools.calculator": "万能计算器",
+  "tools.calculator.desc": "数学、BMI、房贷、汇率、折扣、日期、百分比",
+  "tools.generator": "万能生成器",
+  "tools.generator.desc": "密码、UUID、颜色、验证码",
+  "tools.security": "安全工具",
+  "tools.security.desc": "加密解密、密码强度、JWT解析",
+  "tools.image": "图像处理",
+  "tools.image.desc": "生成、缩放、裁剪、水印、格式转换",
+  "tools.network": "网络工具",
+  "tools.network.desc": "Ping、DNS、WHOIS、SSL、测速、IP",
+  "tools.data": "数据分析",
+  "tools.data.desc": "统计、图表、数据导出",
+  "tools.writing": "写作辅助",
+  "tools.writing.desc": "文章、演讲稿、简历、广告语",
+  "tools.developer": "开发工具",
+  "tools.developer.desc": "JSON、Base64、正则、UUID",
+
+  "status.online": "在线",
+  "status.offline": "离线",
+  "status.ready": "就绪",
+
+  "toast.copied": "已复制到剪贴板",
+  "toast.exported": "已导出",
+  "toast.error": "操作失败"
+}

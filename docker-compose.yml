@@ -1,0 +1,75 @@
+# NebulaCraft v7.0 - 增强版 Docker Compose
+version: '3.8'
+
+services:
+  nebulacraft:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nebulacraft:7.0
+    container_name: nebulacraft
+    ports:
+      - "8889:8889"
+    volumes:
+      # 持久化数据
+      - nebulacraft_data:/app/data
+      # 可选：挂载自定义配置
+      # - ./custom_roles.json:/app/data/custom_roles.json
+    environment:
+      - PORT=8889
+      - MODEL=qwen2.5:1.5b
+      - OLLAMA_URL=http://host.docker.internal:11434  # 连接宿主机 Ollama
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    networks:
+      - nebulacraft_net
+    labels:
+      - "com.nebulacraft.version=7.0"
+      - "com.nebulacraft.description=本地全能AI工作站"
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '2'
+        reservations:
+          memory: 128M
+          cpus: '0.5'
+
+  # 可选：Ollama 服务（如果不想用宿主机的话）
+  ollama:
+    image: ollama/ollama:latest
+    container_name: nebulacraft-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    restart: unless-stopped
+    networks:
+      - nebulacraft_net
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '4'
+    # 下载默认模型
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &
+        sleep 5
+        ollama pull qwen2.5:1.5b
+        ollama pull nomic-embed-text
+        wait
+
+volumes:
+  nebulacraft_data:
+    driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  nebulacraft_net:
+    driver: bridge

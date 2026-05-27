@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NebulaCraft v28.0</title>
+<meta name="theme-color" content="#6c5ce7">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<link rel="stylesheet" href="/css/themes.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<aside id="sidebar" class="sidebar">
+<div class="sidebar-header"><div class="logo">🌌</div><div class="sidebar-title">NebulaCraft</div><div class="sidebar-version">v28.0</div></div>
+<div style="padding:4px 8px;display:flex;align-items:center;gap:8px;">
+<select id="model-select" style="flex:1;padding:8px;border-radius:8px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-family:inherit;font-size:.8rem" onchange="App.setModel(this.value)">
+<option value="qwen2.5:1.5b">Qwen 2.5 1.5B</option>
+<option value="qwen2.5:7b">Qwen 2.5 7B</option>
+</select>
+<button onclick="App.showSettings()" style="background:var(--accent-color,#6c5ce7);color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;white-space:nowrap;">⚙️</button>
+</div>
+<nav class="sidebar-nav">
+<button class="nav-item active" data-view="chat"><span>💬</span> 对话</button>
+<button class="nav-item" data-view="tools"><span>🧰</span> 工具箱</button>
+<button class="nav-item" onclick="App.showCheatsheet()"><span>📖</span> 指令速查</button>
+<button class="nav-item" data-view="history"><span>📋</span> 历史</button>
+</nav>
+<div class="sidebar-footer">
+<details class="a11y-settings"><summary><span>♿</span> 无障碍设置</summary>
+<div class="a11y-options">
+<label class="toggle-row"><span>高对比度</span><input type="checkbox" id="set-highcontrast" onchange="App.toggleSetting('highContrast')"></label>
+<label class="toggle-row"><span>阅读障碍字体</span><input type="checkbox" id="set-dyslexia" onchange="App.toggleSetting('dyslexiaFont')"></label>
+<label class="toggle-row"><span>跟随系统</span><input type="checkbox" id="set-autotheme" onchange="App.toggleAutoTheme(this.checked)"></label>
+<label class="range-row"><span>字号: <output id="font-size-val">16</output>px</span><input type="range" id="set-fontsize" min="12" max="24" value="16" oninput="App.setFontSize(this.value)"></label>
+</div></details>
+<button class="btn-lang" onclick="App.toggleLang()">🌐 <span id="lang-label">EN</span></button>
+</div>
+</aside>
+
+<main id="main-content" class="main-area">
+<header class="topbar">
+<button class="btn-icon" onclick="UI.toggleSidebar()">☰</button>
+<span class="topbar-title">NebulaCraft</span>
+<div class="topbar-spacer"></div>
+<button class="btn-icon" onclick="App.toggleTheme()">🌓</button>
+<button class="btn-icon" onclick="Chat.uploadFile()">📎</button>
+<button class="btn-icon" onclick="Chat.exportHistory()">📥</button>
+</header>
+
+<section id="view-chat" class="view active">
+<div id="messages" class="messages">
+<div class="welcome"><div class="welcome-icon">✨</div><h2>你好，我是 Nova</h2><p>本地全能AI工作站</p></div>
+</div>
+<footer class="input-area"><textarea id="chat-input" rows="1" placeholder="输入消息... (Enter 发送)"></textarea><button onclick="Chat.send()" class="btn-send">发送</button></footer>
+</section>
+
+<section id="view-tools" class="view">
+<div class="tools-header"><input type="search" id="tool-search" class="search-input" placeholder="输入你想做的事..." autocomplete="off"></div>
+<div class="tools-grid" id="tools-grid"></div>
+<div class="tools-result" id="tools-result"></div>
+</section>
+
+<section id="view-history" class="view"><div class="history-list" id="history-list"><div class="empty-state">还没有对话记录</div></div></section>
+
+<div class="statusbar"><span class="status-dot" id="conn-dot"></span><span id="conn-text">就绪</span><span class="statusbar-spacer"></span><span id="word-count">0 字</span></div>
+</main>
+
+<div id="toasts" class="toast-container"></div>
+<input type="file" id="file-input" class="sr-only" multiple accept=".txt,.pdf,.jpg,.png,.doc,.docx,.xlsx,.csv">
+
+<script src="/js/app.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/tools.js"></script>
+<script src="/js/tools-more.js"></script>
+<script src="/js/knowledge.js"></script>
+<script src="/js/dashboard.js"></script>
+<script src="/js/notifications.js"></script>
+<script src="/js/voice.js"></script>
+<script src="/js/templates.js"></script>
+<script src="/js/backup.js"></script>
+<script src="/js/tagger.js"></script>
+<script src="/js/mobile.js"></script>
+<script src="js/td_viewer.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof App !== 'undefined') App.init();
+  if (typeof UI !== 'undefined') UI.init();
+  if (typeof Chat !== 'undefined') Chat.init();
+  if (typeof Tools !== 'undefined') Tools.init();
+  if (typeof ToolsMore !== 'undefined') ToolsMore.init();
+  if (typeof Knowledge !== 'undefined') Knowledge.init();
+  if (typeof Dashboard !== 'undefined') Dashboard.init();
+  if (typeof Notifications !== 'undefined') Notifications.init();
+  if (typeof Voice !== 'undefined') Voice.init();
+  if (typeof Templates !== 'undefined') Templates.init();
+  if (typeof Backup !== 'undefined') Backup.init();
+  if (typeof Tagger !== 'undefined') Tagger.init();
+  if (typeof Mobile !== 'undefined') Mobile.init();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</body>
+</html>

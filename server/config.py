@@ -9,7 +9,7 @@ OUTPUT_DIR = os.path.join(DATA_DIR, "output")
 for d in [DATA_DIR, OUTPUT_DIR]:
     os.makedirs(d, exist_ok=True)
 
-PORT = int(os.environ.get("PORT", 8889))
+PORT = int(os.environ.get("PORT", 9999))
 HOST = "0.0.0.0"
 VERSION = "7.0.0"
 

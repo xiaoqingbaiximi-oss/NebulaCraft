@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 AI 生图服务 - 全平台集成
 支持: 云端API / 本地模型 / 免费代理 / Pillow回退
@@ -9,6 +10,7 @@ import json
 import ssl
 import urllib.request
 import urllib.parse
+from io import BytesIO
 from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "output", "ai_images")
@@ -44,10 +46,14 @@ def _save_pil(img, prompt, style="art"):
 
 
 def _ssl_urlopen(url, timeout=15):
+    """带浏览器 User-Agent 的 HTTPS 请求"""
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
-    return urllib.request.urlopen(url, timeout=timeout, context=ctx)
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    })
+    return urllib.request.urlopen(req, timeout=timeout, context=ctx)
 
 
 # ===== 云端 API =====
@@ -78,12 +84,11 @@ def _try_openai(prompt, width, height, config):
     if not key:
         return None
     try:
-        import json as j, urllib.request as u
         size = "1024x1024"
-        data = j.dumps({"model": "dall-e-3", "prompt": prompt, "n": 1, "size": size}).encode()
-        req = u.Request("https://api.openai.com/v1/images/generations", data=data,
+        data = json.dumps({"model": "dall-e-3", "prompt": prompt, "n": 1, "size": size}).encode()
+        req = urllib.request.Request("https://api.openai.com/v1/images/generations", data=data,
                         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
-        resp = j.loads(_ssl_urlopen(req, timeout=60).read())
+        resp = json.loads(_ssl_urlopen(req, timeout=60).read())
         if "data" in resp:
             img_url = resp["data"][0]["url"]
             img_data = _ssl_urlopen(img_url, timeout=30).read()
@@ -122,7 +127,7 @@ def _try_deepseek(prompt, width, height, config):
 def _check_sd_webui():
     try:
         resp = _ssl_urlopen("http://127.0.0.1:7860/docs", timeout=1)
-        return resp.status == 200
+        return resp.getcode() == 200
     except:
         return False
 
@@ -132,16 +137,15 @@ def _try_sd_webui(prompt, width, height, config):
     if not _check_sd_webui():
         return None
     try:
-        import json as j, urllib.request as u
-        data = j.dumps({
+        data = json.dumps({
             "prompt": prompt + ", masterpiece, best quality",
             "negative_prompt": "lowres, bad anatomy, text, watermark",
             "width": min(width, 768), "height": min(height, 768),
             "steps": 20, "cfg_scale": 7,
         }).encode()
-        req = u.Request("http://127.0.0.1:7860/sdapi/v1/txt2img", data=data,
+        req = urllib.request.Request("http://127.0.0.1:7860/sdapi/v1/txt2img", data=data,
                         headers={"Content-Type": "application/json"})
-        resp = j.loads(_ssl_urlopen(req, timeout=120).read())
+        resp = json.loads(_ssl_urlopen(req, timeout=120).read())
         if "images" in resp:
             img_data = base64.b64decode(resp["images"][0])
             return _save_bytes(img_data, prompt)
@@ -168,16 +172,16 @@ def _try_diffusers(prompt, width, height, config):
 # ===== 免费代理 =====
 
 def _try_pollinations(prompt, width, height, config):
-    """Pollinations.ai"""
+    """Pollinations.ai - 免费 AI 生图（修复 403）"""
     try:
         encoded = urllib.parse.quote(prompt)
         url = f"https://image.pollinations.ai/prompt/{encoded}?width={width}&height={height}&nologo=true"
-        resp = _ssl_urlopen(url, timeout=15)
+        resp = _ssl_urlopen(url, timeout=60)
         data = resp.read()
-        if resp.status == 200 and len(data) > 1000:
+        if resp.getcode() == 200 and len(data) > 1000:
             return _save_bytes(data, prompt)
-    except:
-        pass
+    except Exception as e:
+        print(f"[Pollinations] 错误: {e}")
     return None
 
 
@@ -233,16 +237,29 @@ def generate_image(prompt, width=512, height=512, style=None, platform=None):
     
     for plat in platforms:
         result = None
-        if plat == "qwen": result = _try_qwen(prompt, width, height, config)
-        elif plat == "openai": result = _try_openai(prompt, width, height, config)
-        elif plat == "gemini": result = _try_gemini(prompt, width, height, config)
-        elif plat == "sd_webui": result = _try_sd_webui(prompt, width, height, config)
-        elif plat == "diffusers": result = _try_diffusers(prompt, width, height, config)
-        elif plat == "pollinations": result = _try_pollinations(prompt, width, height, config)
-        elif plat == "pillow": result = _generate_pillow(prompt, width, height, style)
+        print(f"[ImageGen] 尝试 {plat}...")
+        
+        if plat == "qwen":
+            result = _try_qwen(prompt, width, height, config)
+        elif plat == "openai":
+            result = _try_openai(prompt, width, height, config)
+        elif plat == "gemini":
+            result = _try_gemini(prompt, width, height, config)
+        elif plat == "sd_webui":
+            result = _try_sd_webui(prompt, width, height, config)
+        elif plat == "diffusers":
+            result = _try_diffusers(prompt, width, height, config)
+        elif plat == "pollinations":
+            result = _try_pollinations(prompt, width, height, config)
+        elif plat == "pillow":
+            result = _generate_pillow(prompt, width, height, style)
         
         if result and result.get("ok"):
+            print(f"[ImageGen] ✅ {plat} 成功")
+            result["engine"] = plat
             return result
+        else:
+            print(f"[ImageGen] ❌ {plat} 失败")
     
     return _generate_pillow(prompt, width, height, style)
 
@@ -262,6 +279,6 @@ def get_platforms():
         platforms.append({"id": "gemini", "name": "Google Gemini"})
     if _check_sd_webui():
         platforms.append({"id": "sd_webui", "name": "SD WebUI/ComfyUI"})
-    platforms.append({"id": "pollinations", "name": "Pollinations.ai"})
-    platforms.append({"id": "pillow", "name": "内置引擎"})
+    platforms.append({"id": "pollinations", "name": "Pollinations.ai (免费)"})
+    platforms.append({"id": "pillow", "name": "内置几何引擎"})
     return {"ok": True, "platforms": platforms}

@@ -1,3 +1,4 @@
+# server/main.py
 import sys
 import os
 import webbrowser
@@ -11,10 +12,9 @@ from server.utils.helpers import get_local_ip
 from server.services.database import init_db
 
 
-def main():
+def _start_http_server():
+    """启动 HTTP 服务器的核心逻辑"""
     os.makedirs(DATA_DIR, exist_ok=True)
-    
-    # 初始化数据库
     init_db()
 
     print(f"""
@@ -32,17 +32,29 @@ def main():
         pass
 
     server = HTTPServer((HOST, PORT), Handler)
+    return server
 
+
+def run_server():
+    """桌面应用入口：启动服务器并保持运行"""
+    server = _start_http_server()
+    print("🚀 服务器已启动，按 Ctrl+C 停止\n")
     try:
-        print("🚀 服务器已启动，按 Ctrl+C 停止\n")
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n👋 已停止")
         server.shutdown()
 
+
+def main():
+    """命令行入口（功能与 run_server 相同）"""
+    run_server()
+
+
 # 启动热文件夹监控
 try:
-    from server.services.watcher import watcher
+    from server.services.watcher import Watcher
+    watcher = Watcher()
     watcher.start()
 except Exception as e:
     print(f"⚠️ 热文件夹监控启动失败: {e}")
